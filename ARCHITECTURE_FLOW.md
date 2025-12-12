@@ -1,324 +1,256 @@
 # OrgSphere Backend - Architecture Flow Diagram
 
-## High-Level Architecture Flow
+## Complete System Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        CLIENT/FRONTEND                           │
-│                    (API Requests/Responses)                     │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      FASTAPI APPLICATION                          │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    CORS Middleware                        │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                             │                                     │
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    Route Handlers                         │   │
-│  │  ┌──────────────┐              ┌──────────────┐          │   │
-│  │  │ Admin Routes │              │  Org Routes  │          │   │
-│  │  │ /admin/login │              │ /org/create  │          │   │
-│  │  │              │              │ /org/get     │          │   │
-│  │  │              │              │ /org/update  │          │   │
-│  │  │              │              │ /org/delete  │          │   │
-│  │  └──────┬───────┘              └──────┬───────┘          │   │
-│  └─────────┼──────────────────────────────┼──────────────────┘   │
-│            │                              │                      │
-│  ┌─────────▼──────────────────────────────▼──────────────────┐   │
-│  │              Authentication Dependency                    │   │
-│  │         (JWT Token Validation for Protected Routes)      │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                             │                                     │
-│  ┌─────────────────────────▼─────────────────────────────────┐   │
-│  │                    Service Layer                           │   │
-│  │  ┌──────────────────┐        ┌──────────────────┐         │   │
-│  │  │  Admin Service   │        │  Org Service     │         │   │
-│  │  │  - Login         │        │  - Create        │         │   │
-│  │  │  - Auth          │        │  - Get           │         │   │
-│  │  │                  │        │  - Update         │         │   │
-│  │  │                  │        │  - Delete        │         │   │
-│  │  └────────┬─────────┘        └────────┬─────────┘         │   │
-│  └───────────┼───────────────────────────┼───────────────────┘   │
-│              │                           │                        │
-│  ┌───────────▼───────────────────────────▼───────────────────┐   │
-│  │                    Utility Layer                           │   │
-│  │  ┌──────────────┐        ┌──────────────┐                  │   │
-│  │  │   Hashing    │        │  JWT Handler │                  │   │
-│  │  │  - bcrypt    │        │  - Create    │                  │   │
-│  │  │  - Verify    │        │  - Decode    │                  │   │
-│  │  └──────────────┘        └──────────────┘                  │   │
-│  └────────────────────────────────────────────────────────────┘   │
-└────────────────────────────┬───────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    DATABASE CONNECTION LAYER                     │
-│              (MongoDB Client - Master Database)                  │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    MONGODB DATABASE                              │
-│                                                                  │
-│  ┌──────────────────────────────────────────────────────────┐  │
-│  │              MASTER DATABASE (orgsphere_master)           │  │
-│  │                                                            │  │
-│  │  ┌──────────────────┐  ┌──────────────────┐              │  │
-│  │  │  organizations   │  │     admins       │              │  │
-│  │  │  Collection      │  │   Collection    │              │  │
-│  │  │                  │  │                  │              │  │
-│  │  │  - org_name      │  │  - email         │              │  │
-│  │  │  - collection    │  │  - password     │              │  │
-│  │  │    _name         │  │    (hashed)     │              │  │
-│  │  │  - admin_id      │  │  - role          │              │  │
-│  │  │  - created_at    │  │  - created_at    │              │  │
-│  │  └──────────────────┘  └──────────────────┘              │  │
-│  │                                                            │  │
-│  │  ┌────────────────────────────────────────────────────┐  │  │
-│  │  │     DYNAMIC ORGANIZATION COLLECTIONS               │  │  │
-│  │  │     (Created per organization)                      │  │  │
-│  │  │                                                    │  │  │
-│  │  │  org_testorg                                      │  │  │
-│  │  │  org_company1                                     │  │  │
-│  │  │  org_company2                                     │  │  │
-│  │  │  ... (one per organization)                       │  │  │
-│  │  └────────────────────────────────────────────────────┘  │  │
-│  └──────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT REQUEST                                  │
+└───────────────────────────────┬─────────────────────────────────────────────┘
+                                 │
+                                 ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         FASTAPI APPLICATION                                 │
+│                                                                              │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │                        CORS Middleware                             │   │
+│  └──────────────────────────────┬─────────────────────────────────────┘   │
+│                                 │                                          │
+│  ┌──────────────────────────────▼─────────────────────────────────────┐   │
+│  │                      ROUTE HANDLERS                                 │   │
+│  │                                                                     │   │
+│  │  ┌──────────────────────┐        ┌──────────────────────┐         │   │
+│  │  │   Admin Routes       │        │   Organization Routes │         │   │
+│  │  │                      │        │                       │         │   │
+│  │  │  POST /admin/login   │        │  POST /org/create    │         │   │
+│  │  │                      │        │  GET  /org/get       │         │   │
+│  │  │                      │        │  PUT  /org/update    │         │   │
+│  │  │                      │        │  DELETE /org/delete  │         │   │
+│  │  └──────────┬───────────┘        └──────────┬───────────┘         │   │
+│  └─────────────┼────────────────────────────────┼─────────────────────┘   │
+│                │                                │                          │
+│  ┌─────────────▼────────────────────────────────▼─────────────────────┐   │
+│  │              AUTHENTICATION DEPENDENCY (for protected routes)      │   │
+│  │  - Extract JWT token from Authorization header                    │   │
+│  │  - Decode and validate token                                       │   │
+│  │  - Extract admin_id and organization info                          │   │
+│  └──────────────────────────────┬─────────────────────────────────────┘   │
+│                                 │                                          │
+│  ┌──────────────────────────────▼─────────────────────────────────────┐   │
+│  │                        SERVICE LAYER                               │   │
+│  │                                                                     │   │
+│  │  ┌──────────────────────┐        ┌──────────────────────┐         │   │
+│  │  │   Admin Service      │        │   Org Service         │         │   │
+│  │  │                      │        │                       │         │   │
+│  │  │  - Login logic       │        │  - Create org         │         │   │
+│  │  │  - Find admin        │        │  - Get org            │         │   │
+│  │  │  - Verify password   │        │  - Update org         │         │   │
+│  │  │  - Generate JWT      │        │  - Delete org         │         │   │
+│  │  │                      │        │  - Create collection  │         │   │
+│  │  │                      │        │  - Migrate data       │         │   │
+│  │  └──────────┬───────────┘        └──────────┬───────────┘         │   │
+│  └─────────────┼────────────────────────────────┼─────────────────────┘   │
+│                │                                │                          │
+│  ┌─────────────▼────────────────────────────────▼─────────────────────┐   │
+│  │                        UTILITY LAYER                                │   │
+│  │                                                                     │   │
+│  │  ┌──────────────────────┐        ┌──────────────────────┐         │   │
+│  │  │   Password Hashing   │        │   JWT Handler        │         │   │
+│  │  │                      │        │                       │         │   │
+│  │  │  - hash_password()    │        │  - create_token()     │         │   │
+│  │  │  - verify_password()  │        │  - decode_token()     │         │   │
+│  │  │  (using bcrypt)      │        │                       │         │   │
+│  │  └──────────────────────┘        └──────────────────────┘         │   │
+│  └──────────────────────────────┬─────────────────────────────────────┘   │
+└─────────────────────────────────┼─────────────────────────────────────────┘
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DATABASE CONNECTION LAYER                                 │
+│              MongoDB Client → Master Database Connection                     │
+└──────────────────────────────────┬──────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         MONGODB DATABASE                                    │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │              MASTER DATABASE: orgsphere_master                       │  │
+│  │                                                                      │  │
+│  │  ┌────────────────────────┐    ┌────────────────────────┐           │  │
+│  │  │  organizations         │    │  admins                │           │  │
+│  │  │  Collection            │    │  Collection           │           │  │
+│  │  │                        │    │                        │           │  │
+│  │  │  - organization_name   │    │  - email               │           │  │
+│  │  │  - display_name        │    │  - password (hashed)  │           │  │
+│  │  │  - collection_name     │    │  - role                │           │  │
+│  │  │  - admin_id            │    │  - created_at         │           │  │
+│  │  │  - created_at          │    │                        │           │  │
+│  │  │  - updated_at          │    │                        │           │  │
+│  │  └────────────────────────┘    └────────────────────────┘           │  │
+│  │                                                                      │  │
+│  │  ┌──────────────────────────────────────────────────────────────┐  │  │
+│  │  │         DYNAMIC ORGANIZATION COLLECTIONS                      │  │  │
+│  │  │         (Created automatically per organization)              │  │  │
+│  │  │                                                               │  │  │
+│  │  │  org_testorg          →  Organization A's data               │  │  │
+│  │  │  org_company1          →  Organization B's data               │  │  │
+│  │  │  org_company2          →  Organization C's data                │  │  │
+│  │  │  ...                  →  One collection per organization    │  │  │
+│  │  └──────────────────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                            RESPONSE TO CLIENT                                │
+│                    (JSON with data or error message)                        │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Request Flow Examples
+## Detailed Request Flow Examples
 
 ### 1. Create Organization Flow
 
 ```
-Client Request
+Client → POST /org/create
     │
-    ▼
-POST /org/create
+    ├─► Route Handler validates input (Pydantic schema)
     │
-    ▼
-Route Handler (org_routes.py)
+    ├─► Service Layer:
+    │   ├─► Check if organization_name exists in master DB
+    │   ├─► Create new collection: org_<organization_name>
+    │   ├─► Hash password using bcrypt
+    │   ├─► Insert admin document into 'admins' collection
+    │   ├─► Insert organization metadata into 'organizations' collection
+    │   └─► Return success response with org details
     │
-    ▼
-Service Layer (org_service.py)
-    │
-    ├─► Validate organization_name doesn't exist
-    │
-    ├─► Create dynamic collection (org_<name>)
-    │
-    ├─► Hash password (bcrypt)
-    │
-    ├─► Create admin document in 'admins' collection
-    │
-    ├─► Create organization metadata in 'organizations' collection
-    │
-    └─► Return success response
+    └─► Response: Organization created with collection name and admin ID
 ```
 
 ### 2. Admin Login Flow
 
 ```
-Client Request
+Client → POST /admin/login
     │
-    ▼
-POST /admin/login
+    ├─► Route Handler validates email and password
     │
-    ▼
-Route Handler (admin_routes.py)
+    ├─► Service Layer:
+    │   ├─► Find admin by email in 'admins' collection
+    │   ├─► Verify password using bcrypt
+    │   ├─► Find organization linked to this admin
+    │   ├─► Generate JWT token containing:
+    │   │   - admin_id
+    │   │   - email
+    │   │   - organization name
+    │   │   - expiration time
+    │   └─► Return JWT token
     │
-    ▼
-Service Layer (admin_service.py)
-    │
-    ├─► Find admin by email in 'admins' collection
-    │
-    ├─► Verify password (bcrypt)
-    │
-    ├─► Find organization linked to admin
-    │
-    ├─► Generate JWT token (contains admin_id, email, organization)
-    │
-    └─► Return JWT token
+    └─► Response: JWT access token for authenticated requests
 ```
 
-### 3. Update Organization Flow (Protected)
+### 3. Update Organization Flow (Protected Route)
 
 ```
-Client Request (with JWT token)
+Client → PUT /org/update (with JWT token in header)
     │
-    ▼
-PUT /org/update
+    ├─► Authentication Dependency:
+    │   ├─► Extract Bearer token from Authorization header
+    │   ├─► Decode JWT token
+    │   ├─► Validate token signature and expiration
+    │   └─► Extract admin_id from token payload
     │
-    ▼
-Authentication Dependency (auth.py)
+    ├─► Route Handler validates new organization data
     │
-    ├─► Extract JWT token from header
+    ├─► Service Layer:
+    │   ├─► Find organization by admin_id (ensures admin owns the org)
+    │   ├─► Validate new organization_name doesn't exist
+    │   ├─► If organization name changed:
+    │   │   ├─► Create new collection with new name
+    │   │   ├─► Copy all documents from old collection to new
+    │   │   └─► Drop old collection
+    │   ├─► Hash new password
+    │   ├─► Update admin email and password in 'admins' collection
+    │   ├─► Update organization metadata in 'organizations' collection
+    │   └─► Return success response
     │
-    ├─► Decode and validate token
-    │
-    └─► Extract admin_id from token
-    │
-    ▼
-Route Handler (org_routes.py)
-    │
-    ▼
-Service Layer (org_service.py)
-    │
-    ├─► Find organization by admin_id
-    │
-    ├─► Validate new organization_name doesn't exist
-    │
-    ├─► If name changed:
-    │   ├─► Create new collection
-    │   ├─► Migrate data from old collection
-    │   └─► Drop old collection
-    │
-    ├─► Update admin email/password
-    │
-    ├─► Update organization metadata
-    │
-    └─► Return success response
+    └─► Response: Updated organization details
 ```
 
-### 4. Delete Organization Flow (Protected)
+### 4. Delete Organization Flow (Protected Route)
 
 ```
-Client Request (with JWT token)
+Client → DELETE /org/delete?organization_name=... (with JWT token)
     │
-    ▼
-DELETE /org/delete?organization_name=...
+    ├─► Authentication Dependency validates JWT and extracts admin_id
     │
-    ▼
-Authentication Dependency (auth.py)
+    ├─► Route Handler extracts organization_name from query params
     │
-    ├─► Validate JWT token
+    ├─► Service Layer:
+    │   ├─► Find organization by name in 'organizations' collection
+    │   ├─► Verify admin_id matches (authorization check)
+    │   ├─► Drop the organization's dynamic collection
+    │   ├─► Delete admin document from 'admins' collection
+    │   ├─► Delete organization metadata from 'organizations' collection
+    │   └─► Return success message
     │
-    └─► Extract admin_id
-    │
-    ▼
-Route Handler (org_routes.py)
-    │
-    ▼
-Service Layer (org_service.py)
-    │
-    ├─► Find organization by name
-    │
-    ├─► Verify admin_id matches (authorization)
-    │
-    ├─► Drop organization's collection
-    │
-    ├─► Delete admin document
-    │
-    ├─► Delete organization metadata
-    │
-    └─► Return success response
+    └─► Response: Confirmation of deletion
 ```
 
-## Data Flow Diagram
+### 5. Get Organization Flow
 
 ```
-┌─────────────┐
-│   Request   │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────┐
-│  Pydantic       │
-│  Schema         │──► Input Validation
-│  Validation     │
-└──────┬──────────┘
-       │
-       ▼
-┌─────────────────┐
-│  Service        │──► Business Logic
-│  Layer          │    - Data Processing
-└──────┬──────────┘    - Validation Rules
-       │
-       ▼
-┌─────────────────┐
-│  Database       │──► MongoDB Operations
-│  Operations     │    - CRUD Operations
-└──────┬──────────┘    - Collection Management
-       │
-       ▼
-┌─────────────────┐
-│  Response       │──► JSON Response
-│  Formation      │    - Success/Error
-└─────────────────┘
+Client → GET /org/get?organization_name=...
+    │
+    ├─► Route Handler extracts organization_name from query params
+    │
+    ├─► Service Layer:
+    │   ├─► Find organization by name in 'organizations' collection
+    │   ├─► If not found, return 404 error
+    │   └─► Format response (convert ObjectId to string)
+    │
+    └─► Response: Organization metadata from master database
 ```
 
-## Component Interactions
+## Multi-Tenant Data Isolation
 
 ```
-┌──────────────┐         ┌──────────────┐
-│   Routes     │────────►│  Services    │
-│  (HTTP)      │         │  (Business)  │
-└──────┬───────┘         └──────┬───────┘
-       │                        │
-       │                        ▼
-       │              ┌──────────────┐
-       │              │   Utils      │
-       │              │  (Hashing,   │
-       │              │   JWT)       │
-       │              └──────┬───────┘
-       │                     │
-       ▼                     ▼
-┌──────────────┐    ┌──────────────┐
-│ Dependencies │    │  Database    │
-│  (Auth)      │    │  Connection  │
-└──────────────┘    └──────────────┘
-```
-
-## Multi-Tenant Architecture Flow
-
-```
-Organization A
+Master Database (orgsphere_master)
     │
-    ├─► Master DB: organizations collection
-    │   └─► Metadata: org_a, collection_name: org_a
+    ├─► organizations collection
+    │   └─► Stores metadata for all organizations
+    │       - Links to admin users
+    │       - Contains collection names
     │
-    └─► Dynamic Collection: org_a
-        └─► Organization-specific data
-
-Organization B
+    ├─► admins collection
+    │   └─► Stores all admin user credentials
     │
-    ├─► Master DB: organizations collection
-    │   └─► Metadata: org_b, collection_name: org_b
-    │
-    └─► Dynamic Collection: org_b
-        └─► Organization-specific data
-
-Organization C
-    │
-    ├─► Master DB: organizations collection
-    │   └─► Metadata: org_c, collection_name: org_c
-    │
-    └─► Dynamic Collection: org_c
-        └─► Organization-specific data
+    └─► Dynamic Collections (one per organization)
+        │
+        ├─► org_testorg → Isolated data for "TestOrg"
+        ├─► org_company1 → Isolated data for "Company1"
+        ├─► org_company2 → Isolated data for "Company2"
+        └─► ... (each organization has its own collection)
 ```
 
 ## Security Flow
 
 ```
-Request with Token
+Request with Authorization Header
     │
-    ▼
-Extract Bearer Token
+    ├─► Extract "Bearer <token>" from header
     │
-    ▼
-Decode JWT Token
+    ├─► Decode JWT token using secret key
     │
-    ├─► Valid? ──► Extract admin_id, organization
-    │   │
-    │   └─► Continue to route handler
+    ├─► Validate:
+    │   ├─► Token signature is valid
+    │   ├─► Token hasn't expired
+    │   └─► Token contains required fields (admin_id)
     │
-    └─► Invalid? ──► Return 401 Unauthorized
+    ├─► If valid:
+    │   └─► Extract admin_id and pass to route handler
+    │
+    └─► If invalid:
+        └─► Return 401 Unauthorized error
 ```
 
-This flow diagram can be used to create a visual flowchart using tools like:
-- Draw.io
-- Lucidchart
-- Mermaid (if supported)
-- Any flowchart creation tool
+This diagram shows the complete flow from client request through all layers of the application to the database and back to the client response.
