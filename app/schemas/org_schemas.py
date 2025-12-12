@@ -4,3 +4,8 @@ class CreateOrgRequest(BaseModel):
     organization_name: str = Field(..., min_length=2, max_length=64)
     email: EmailStr
     password: str = Field(..., min_length=6)
+
+class UpdateOrgRequest(BaseModel):
+    organization_name: str = Field(..., min_length=2, max_length=64)
+    email: EmailStr
+    password: str = Field(..., min_length=6)
