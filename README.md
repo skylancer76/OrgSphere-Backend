@@ -2,6 +2,9 @@
 
 A multi-tenant organization management backend service built with FastAPI and MongoDB.
 
+> [!NOTE]
+> This project has been developed as part of the assignment for the recruitment process at **The Wedding Company**.
+
 ## Features
 
 - **Multi-tenant Architecture**: Each organization has its own isolated MongoDB collection
@@ -163,6 +166,3 @@ OrgSphere Backend/
   }
   ```
 - **JWT Token Contains**: Admin ID, email, and organization identifier
-
-> [!NOTE]
-> This project has been developed as part of the assignment for the recruitment process at **The Wedding Company**.
